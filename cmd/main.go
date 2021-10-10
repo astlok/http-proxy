@@ -41,6 +41,7 @@ func main() {
 	router.HandleFunc("/requests", handlers.GetRequests).Methods(http.MethodGet)
 	router.HandleFunc("/requests/{id}", handlers.GetRequestByID).Methods(http.MethodGet)
 	router.HandleFunc("/repeat/{id}", handlers.RepeatRequest).Methods(http.MethodGet)
+	router.HandleFunc("/dirsearch/{id}", handlers.DirSearch).Methods(http.MethodGet)
 
 	repeatServer := http.Server{
 		Handler:      router,

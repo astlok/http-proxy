@@ -26,8 +26,8 @@ func (s *Saver) MongoConnect() {
 	s.client = client
 	fmt.Println(err)
 
-	collection := s.client.Database("test").Collection("requests")
-	collection.Drop(context.TODO())
+	//collection := s.client.Database("test").Collection("requests")
+	//collection.Drop(context.TODO())
 	return
 }
 
