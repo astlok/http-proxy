@@ -72,8 +72,7 @@ func (h *Handlers) GetRequestByID(w http.ResponseWriter, r *http.Request) {
 	Respond(w, 200, result)
 }
 
-func (h *Handlers) RepeatRequest(w http.ResponseWriter, r *http.Request) {
-	collection := h.Saver.GetClient().Database("test").Collection("requests")
+func (h *Handlers) RepeatRequest(w http.ResponseWriter, r *http.Request) {collection := h.Saver.GetClient().Database("test").Collection("requests")
 
 	var result models.ReplyRequest
 
@@ -89,8 +88,11 @@ func (h *Handlers) RepeatRequest(w http.ResponseWriter, r *http.Request) {
 	var repeatReq *http.Request
 
 	var url string
-	url = result.Path + "?"
+	url = result.Path
 	if result.HttpMethod == "GET" {
+		if len(result.GetParams) != 0 {
+			url += "?"
+		}
 		for key, value := range result.GetParams {
 			url += key + "=" + strings.Join(value, ",")
 		}
@@ -113,5 +115,9 @@ func (h *Handlers) RepeatRequest(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	h.Proxy.HttpHandler(w, repeatReq)
+	if repeatReq.Method == "CONNECT" {
+		h.Proxy.HttpsHandler(w, repeatReq)
+	} else {
+		h.Proxy.HttpHandler(w, repeatReq)
+	}
 }

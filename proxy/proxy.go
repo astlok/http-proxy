@@ -2,13 +2,12 @@ package proxy
 
 import (
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"proxy/saver"
 )
 
-type Proxy struct{
+type Proxy struct {
 	Saver *saver.Saver
 }
 
@@ -16,7 +15,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodConnect {
 		p.HttpHandler(w, r)
 	} else {
-		p.httpsHandler(w, r)
+		p.HttpsHandler(w, r)
 	}
 }
 
@@ -24,27 +23,27 @@ func (p *Proxy) HttpHandler(w http.ResponseWriter, r *http.Request) {
 	r.Header.Del("Proxy-Connection")
 	r.RequestURI = ""
 
-	client := &http.Client{
-		CheckRedirect: checkRedirect,
-	}
 	p.Saver.SaveRequest(r)
-	resp, err := client.Do(r)
-	p.Saver.SaveResponse(resp)
+	resp, err := http.DefaultTransport.RoundTrip(r)
 	if err != nil {
-		http.Error(w, "Server Error", http.StatusInternalServerError)
-		log.Fatal("ServeHTTP:", err)
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+		return
 	}
-	copyHeader(w.Header(), resp.Header)
-	w.WriteHeader(resp.StatusCode)
-	_, err = io.Copy(w, resp.Body)
+	p.Saver.SaveResponse(resp)
 
+	w.WriteHeader(resp.StatusCode)
+	copyHeader(w.Header(), resp.Header)
+
+	defer resp.Body.Close()
+	_, err = io.Copy(w, resp.Body)
 	if err != nil {
-		http.Error(w, "Server Error", http.StatusInternalServerError)
-		log.Fatal("ServeHTTP:", err)
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+		return
 	}
 }
 
-func (p *Proxy) httpsHandler(w http.ResponseWriter, r *http.Request) {
+func (p *Proxy) HttpsHandler(w http.ResponseWriter, r *http.Request) {
+	p.Saver.SaveRequest(r)
 	dest, err := net.Dial("tcp", r.Host)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -62,7 +61,6 @@ func (p *Proxy) httpsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	go transfer(dest, client)
 	go transfer(client, dest)
-
 }
 
 func transfer(destination io.WriteCloser, source io.ReadCloser) {

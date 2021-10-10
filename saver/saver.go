@@ -36,7 +36,11 @@ func (s *Saver) SaveRequest(req *http.Request) {
 
 	parseReq.HttpMethod = req.Method
 
-	parseReq.Path = req.URL.Host + req.URL.Path
+	if req.URL.Scheme == "" {
+		parseReq.Path = "https://" + req.URL.Host + req.URL.Path
+	} else {
+		parseReq.Path = req.URL.Scheme + "://" + req.URL.Host + req.URL.Path
+	}
 
 	parseReq.GetParams = make(map[string][]string)
 

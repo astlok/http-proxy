@@ -16,7 +16,6 @@ func main() {
 
 	conf := config.NewConfig()
 
-
 	mongo := &saver.Saver{}
 
 	mongo.MongoConnect()
@@ -44,8 +43,9 @@ func main() {
 	router.HandleFunc("/repeat/{id}", handlers.RepeatRequest).Methods(http.MethodGet)
 
 	repeatServer := http.Server{
-		Handler: router,
-		Addr:    ":8081",
+		Handler:      router,
+		Addr:         ":8081",
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	if conf.HTTPS {
